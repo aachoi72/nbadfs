@@ -17,8 +17,8 @@ highestDate = (0, 0, 0)
 category = 'none'
 counter = 0
 year = 2020
-month = 1
-date = 20
+month = 2
+date = 9
 injuredPlayerList = []
 
 def BacktestDate(df, currentDate, currentDayDF, isBacktest):
@@ -53,21 +53,36 @@ def BacktestDate(df, currentDate, currentDayDF, isBacktest):
         optimisticDKPoints.append(optimisticOptimalDKLineup.actual_fantasy_points)
         pesimisticDKPoints.append(optimalPesimisticDKLineup.actual_fantasy_points)
 
-        print('Done for: {0}\n\nAverageTotal: {1}\nOptimisticTotal: {2}\nPesimisticTotal: {3}\n'.format(currentDate, optimalLineup.actual_fantasy_points, optimisticOptimalLineup.actual_fantasy_points, optimalPesimisticLineup.actual_fantasy_points))
+        print('Done for FD: {0}\n\nOptimisticTotal: {2}\nAverageTotal: {1}\nPesimisticTotal: {3}\n'.format(currentDate, optimalLineup.actual_fantasy_points, optimisticOptimalLineup.actual_fantasy_points, optimalPesimisticLineup.actual_fantasy_points))
+        print('Done for DK: {0}\n\nOptimisticTotal: {2}\nAverageTotal: {1}\nPesimisticTotal: {3}\n'.format(currentDate, optimalDKLineup.actual_fantasy_points, optimisticOptimalDKLineup.actual_fantasy_points, optimalPesimisticDKLineup.actual_fantasy_points))
 
-        print('Optimistic Lineup')
+        print('Optimistic FD Lineup')
         print(optimisticOptimalLineup)
         print('Total: ', optimisticOptimalLineup.actual_fantasy_points)
         print('=====================================================')
 
-        print('Average Lineup')
+        print('Average FD Lineup')
         print(optimalLineup)
         print('Total: ', optimalLineup.actual_fantasy_points)
         print('=====================================================')
 
-        print('Pestimistic Lineup')
+        print('Pestimistic FD Lineup')
         print(optimalPesimisticLineup)
         print('Total: ', optimalPesimisticLineup.actual_fantasy_points)
+
+        print('Optimistic DK Lineup')
+        print(optimisticOptimalLineup)
+        print('Total: ', optimisticOptimalDKLineup.actual_fantasy_points)
+        print('=====================================================')
+
+        print('Average DK Lineup')
+        print(optimalLineup)
+        print('Total: ', optimalDKLineup.actual_fantasy_points)
+        print('=====================================================')
+
+        print('Pestimistic DK Lineup')
+        print(optimalPesimisticLineup)
+        print('Total: ', optimalPesimisticDKLineup.actual_fantasy_points)
 
     except Exception as err:
         print('Error with Date: ', currentDate, err)
@@ -120,6 +135,7 @@ else:
     currentDayDF = currentDayDF.replace({'opp_id' : tr.fanduelTeamTranslation})
     currentDayDF['homeAway'] = currentDayDF.apply(lambda row: 'home' if row.Game.split('@')[1] == row.Team else 'away', axis=1)
     currentDayDF = currentDayDF.set_index('name', drop=False)
+    # print(currentDayDF)
 
     if len(sys.argv) > 2:
         DKFileName = sys.argv[2]

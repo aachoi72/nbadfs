@@ -85,7 +85,7 @@ def ParseSiteInformation(site, prices, positions, salaryName, positionName):
 client = MongoClient()
 db = client.test
 
-results = db.nbaGameLogs.find({'year': 2020, 'month': 1, 'date': {'$gt': 18}})
+results = db.nbaGameLogs.find({'year': 2020, 'month': 2, 'date': {'$gt': 8}})
 
 dateFDPrices = {}
 dateFDPositions = {}

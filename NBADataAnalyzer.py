@@ -28,6 +28,7 @@ class NBADataAnalyzer:
         self.oneDayPrevious = []
         self.FindRecentRest()
         self.isBackTesting = isBackTesting
+        self.importantStats = ['pts', 'fg3', 'ast', 'orb', 'drb', 'stl', 'blk', 'tov']
 
     def SetupCurrentSeasonDF(self, playersDF, currentDF):
         self.playersDF = playersDF
@@ -547,10 +548,11 @@ class NBADataAnalyzer:
 
         # self.opponentFDPctDF.to_csv('OpponentDefence.csv')
         optimalTeams, optimalDKTeams, expectedPointsDF = self.GenerateProjections(self.opponentFDPctDF, self.opponentDKPctDF, self.recentDiffPctDF, currentDayDF, self.homeAwayPctDF, self.matchupDF)
-        expectedPointsDF.to_csv('AveragePoints.csv')
-        self.matchupDF.to_csv('Matchups.csv')
-        self.opponentFDPctDF.to_csv('FDdefence.csv')
-        self.opponentDKPctDF.to_csv('DKdefence.csv')
+        # expectedPointsDF.to_csv('AveragePoints.csv')
+        # self.matchupDF.to_csv('Matchups.csv')
+        # self.opponentFDPctDF.to_csv('FDdefence.csv')
+        # self.opponentDKPctDF.to_csv('DKdefence.csv')
+        # self.homeAwayDF.to_csv('HomeAway.csv')
 
         optimalOptimisticTeams, optimalOptimsticDKTeams, expectedPointsDF = self.GenerateProjections(self.opponentFDPct3QtlDF, self.opponentDKPct3QtlDF, self.recent3QtlPctDF, currentDayDF, self.homeAwayPctDF, self.matchup3QtlDF)
         expectedPointsDF.to_csv('OptimisticPoints.csv')
@@ -620,20 +622,21 @@ class NBADataAnalyzer:
         overallOppDefDF['blk_diff_pct'] = overallOppDefDF.apply(lambda row: row.blk_diff_pct / 2, axis=1)
         overallOppDefDF['tov_diff_pct'] = overallOppDefDF.apply(lambda row: row.tov_diff_pct / 2, axis=1)
 
-        recentDF['pts_diff_pct'] = recentDF.apply(lambda row: row.pts_diff_pct / 2, axis=1)
-        recentDF['fg2_diff_pct'] = recentDF.apply(lambda row: row.fg2_diff_pct / 2, axis=1)
-        recentDF['fg3_diff_pct'] = recentDF.apply(lambda row: row.fg3_diff_pct / 2, axis=1)
-        recentDF['fta_diff_pct'] = recentDF.apply(lambda row: row.fta_diff_pct / 2, axis=1)
-        recentDF['orb_diff_pct'] = recentDF.apply(lambda row: row.orb_diff_pct / 2, axis=1)
-        recentDF['drb_diff_pct'] = recentDF.apply(lambda row: row.drb_diff_pct / 2, axis=1)
-        recentDF['ast_diff_pct'] = recentDF.apply(lambda row: row.ast_diff_pct / 2, axis=1)
-        recentDF['stl_diff_pct'] = recentDF.apply(lambda row: row.stl_diff_pct / 2, axis=1)
-        recentDF['blk_diff_pct'] = recentDF.apply(lambda row: row.blk_diff_pct / 2, axis=1)
-        recentDF['tov_diff_pct'] = recentDF.apply(lambda row: row.tov_diff_pct / 2, axis=1)
+        # recentDF['pts_diff_pct'] = recentDF.apply(lambda row: row.pts_diff_pct / 2, axis=1)
+        # recentDF['fg2_diff_pct'] = recentDF.apply(lambda row: row.fg2_diff_pct / 2, axis=1)
+        # recentDF['fg3_diff_pct'] = recentDF.apply(lambda row: row.fg3_diff_pct / 2, axis=1)
+        # recentDF['fta_diff_pct'] = recentDF.apply(lambda row: row.fta_diff_pct / 2, axis=1)
+        # recentDF['orb_diff_pct'] = recentDF.apply(lambda row: row.orb_diff_pct / 2, axis=1)
+        # recentDF['drb_diff_pct'] = recentDF.apply(lambda row: row.drb_diff_pct / 2, axis=1)
+        # recentDF['ast_diff_pct'] = recentDF.apply(lambda row: row.ast_diff_pct / 2, axis=1)
+        # recentDF['stl_diff_pct'] = recentDF.apply(lambda row: row.stl_diff_pct / 2, axis=1)
+        # recentDF['blk_diff_pct'] = recentDF.apply(lambda row: row.blk_diff_pct / 2, axis=1)
+        # recentDF['tov_diff_pct'] = recentDF.apply(lambda row: row.tov_diff_pct / 2, axis=1)
 
+        homeAwayDF = homeAwayDF.set_index(['name', 'homeAway'], drop=False)
         averageDF = averageDF.set_index(['fdPosition', 'opp_id'], drop=False)
         averageDKDF = averageDKDF.set_index(['dkPosition', 'opp_id'], drop=False)
-        matchupDF = matchupDF.set_index(['name', 'opp_id'], drop=False)
+        # matchupDF = matchupDF.set_index(['name', 'opp_id'], drop=False)
         recentDF = recentDF.set_index('name', drop=False)
         usageDiff = {}
         minAdd = {}
@@ -662,205 +665,222 @@ class NBADataAnalyzer:
                 if key in recentDF.index:
                     recentDF.at[key, 'mp'] = expectedMinutesToAdd + recentDF.at[key, 'mp']
 
-        # print(averageDKDF)
         currentDayDF = currentDF.copy()
-        currentDayDF['mp_per_g'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'], axis=1)
-        currentDayDF['expectedPtsPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'pts_per_min'])
-                                            * averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['pts_diff_pct']
-                                            + (recentDF.at[row.name, 'pts_diff_pct'] if row.name in recentDF.index else 0)
-                                            # + (overallOppDefDF.at[row.opp_id, 'pts_diff_pct'])
-                                            # + homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['pts_diff_pct']
-                                            + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['pts_diff_pct'] if (row.name, row.opp_id) in matchupDF.index else 0)
-                                            , axis=1)
-        currentDayDF['expectedPts'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'] * row.expectedPtsPerMin, axis=1)
-        # currentDayDF['expectedPts'] = currentDayDF.apply(lambda row: row.mp * row.expectedPtsPerMin, axis=1)
-        currentDayDF['expectedDKPtsPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'pts_per_min'])
-                                            * averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0]['pts_diff_pct'] if (row.dkPosition, row.opp_id) in averageDKDF.index else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['pts_diff_pct']
-                                            + (recentDF.at[row.name, 'pts_diff_pct'] if row.name in recentDF.index else 0)
-                                            # + (overallOppDefDF.at[row.opp_id, 'pts_diff_pct'])
-                                            # + homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['pts_diff_pct']
-                                            + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['pts_diff_pct'] if (row.name, row.opp_id) in matchupDF.index else 0)
-                                            , axis=1)
-        currentDayDF['expectedDKPts'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'] * row.expectedDKPtsPerMin, axis=1)
-        # currentDayDF['expectedDKPts'] = currentDayDF.apply(lambda row: row.mp * row.expectedDKPtsPerMin, axis=1)
-        # currentDayDF['expected2fgPerMin'] = currentDayDF.apply(lambda row: self.playersDF[self.playersDF['name'] == row.name].iloc[0]['fg2_per_min'] *
-        #                                   averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['fg2_diff_pct'] *
-        #                                   recentDF[recentDF['name'] == row.name].iloc[0]['fg2_diff_pct'], axis=1)
-        # currentDayDF['expected2fg'] = currentDayDF.apply(lambda row: self.playersDF[self.playersDF['name'] == row.name].iloc[0]['mp_per_g'] * row.expected2fgPerMin, axis=1)
-        currentDayDF['expected3fgPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'fg3_per_min'] )
-                                            * averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['fg3_diff_pct']
-                                            + (recentDF.at[row.name, 'fg3_diff_pct'] if row.name in recentDF.index else 0)
-                                            # + (overallOppDefDF.at[row.opp_id, '3fg_diff_pct'])
-                                            # + (homeAwayDF.at[row.name, '3fg_diff_pct'] if row.name in homeAwayDF.index else 0)
-                                            + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['fg3_diff_pct'] if (row.name, row.opp_id) in matchupDF.index else 0)
-                                            , axis=1)
-        currentDayDF['expected3fg'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'] * row.expected3fgPerMin, axis=1)
-        # currentDayDF['expected3fg'] = currentDayDF.apply(lambda row: row.mp * row.expected3fgPerMin, axis=1)
-        currentDayDF['expectedDK3fgPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'fg3_per_min'] )
-                                            * averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0]['fg3_diff_pct'] if (row.dkPosition, row.opp_id) in averageDKDF.index else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['fg3_diff_pct']
-                                            + (recentDF.at[row.name, 'fg3_diff_pct'] if row.name in recentDF.index else 0)
-                                            # + (overallOppDefDF.at[row.opp_id, '3fg_diff_pct'])
-                                            # + (homeAwayDF.at[row.name, '3fg_diff_pct'] if row.name in homeAwayDF.index else 0)
-                                            + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['fg3_diff_pct'] if (row.name, row.opp_id) in matchupDF.index else 0)
-                                            , axis=1)
-        currentDayDF['expectedDK3fg'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'] * row.expectedDK3fgPerMin, axis=1)        # currentDayDF['expectedftaPerMin'] = currentDayDF.apply(lambda row: self.playersDF[self.playersDF['name'] == row.name].iloc[0]['fta_per_min'] *
-        # currentDayDF['expectedDK3fg'] = currentDayDF.apply(lambda row: (recentDF.at[row.name, 'mp'] if row.name in recentDF.index else self.playersDF.at[row.name, 'mp_per_g']) * row.expectedDK3fgPerMin, axis=1)        # currentDayDF['expectedftaPerMin'] row.mp] *
-        #                                   averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['fta_diff_pct'] *
-        #                                   recentDF[recentDF['name'] == row.name].iloc[0]['fta_diff_pct'], axis=1)
-        # currentDayDF['expectedfta'] = currentDayDF.apply(lambda row: self.playersDF[self.playersDF['name'] == row.name].iloc[0]['mp_per_g'] * row.expectedftaPerMin, axis=1)
+        # print(homeAwayDF[homeAwayDF['name'] == 'John Collins'])
+        if self.isBackTesting:
+            currentDayDF['mp_per_g'] = currentDayDF['mp']
+        else:
+            currentDayDF['mp_per_g'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'], axis=1)
 
-        # currentDayDF['expectedPts'] = currentDayDF.apply(lambda row: row.expected3fg*3 + row.expected2fg*2 + row.expectedfta * self.playersDF[self.playersDF['name'] == row.name].iloc[0]['ft_pct'], axis=1)
+        for stat in self.importantStats:
+            expectedStat = str.format('expected{0}', stat)
+            expectedStatPerMin = str.format('expected{0}PerMin', stat)
+            expectedDKStat = str.format('expectedDK{0}', stat)
+            expectedDKStatPerMin = str.format('expectedDK{0}PerMin', stat)
+            statPerMin = str.format('{0}_per_min', stat)
+            statDiffPct = str.format('{0}_diff_pct', stat)
+
+            currentDayDF[expectedStatPerMin] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, statPerMin])
+                                                * averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0][statDiffPct]
+                                                + (recentDF.at[row.name, statDiffPct] if row.name in recentDF.index else 0)
+                                                # + (overallOppDefDF.at[row.opp_id, 'pts_diff_pct'])
+                                                + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0][statDiffPct] if ((homeAwayDF['name'] == row.name) & (homeAwayDF['homeAway'] == row.homeAway)).any() else 0)
+                                                + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0][statDiffPct] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+                                                , axis=1)
+            currentDayDF[expectedStat] = currentDayDF.apply(lambda row: row.mp_per_g * row[expectedStatPerMin], axis=1)
+
+            currentDayDF[expectedDKStatPerMin] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, statPerMin])
+                                                * (averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0][statDiffPct] if ((averageDKDF['dkPosition'] == row.dkPosition) & (averageDKDF['opp_id'] == row.opp_id)).any() else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0][statDiffPct])
+                                                + (recentDF.at[row.name, statDiffPct] if row.name in recentDF.index else 0)
+                                                # + (overallOppDefDF.at[row.opp_id, 'pts_diff_pct'])
+                                                + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0][statDiffPct] if ((homeAwayDF['name'] == row.name) & (homeAwayDF['homeAway'] == row.homeAway)).any() else 0)
+                                                + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0][statDiffPct] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+                                                , axis=1)
+            currentDayDF[expectedDKStat] = currentDayDF.apply(lambda row: row.mp_per_g * row[expectedDKStatPerMin], axis=1)
+
+        # currentDayDF['expectedDKPtsPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'pts_per_min'])
+        #                                     * averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0]['pts_diff_pct'] if (row.dkPosition, row.opp_id) in averageDKDF.index else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['pts_diff_pct']
+        #                                     + (recentDF.at[row.name, 'pts_diff_pct'] if row.name in recentDF.index else 0)
+        #                                     # + (overallOppDefDF.at[row.opp_id, 'pts_diff_pct'])
+        #                                     # + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['pts_diff_pct'] if (row.name, row.homeAway) in homeAwayDF.index else 0)
+        #                                     + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['pts_diff_pct'] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+        #                                     , axis=1)
+        # currentDayDF['expectedDKPts'] = currentDayDF.apply(lambda row: row.mp_per_g * row.expectedDKPtsPerMin, axis=1)
+
+        # currentDayDF['expected3fgPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'fg3_per_min'] )
+        #                                     * averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['fg3_diff_pct']
+        #                                     + (recentDF.at[row.name, 'fg3_diff_pct'] if row.name in recentDF.index else 0)
+        #                                     # + (overallOppDefDF.at[row.opp_id, '3fg_diff_pct'])
+        #                                     # + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['fg3_diff_pct'] if (row.name, row.homeAway) in homeAwayDF.index else 0)
+        #                                     + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['fg3_diff_pct'] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+        #                                     , axis=1)
+        # currentDayDF['expected3fg'] = currentDayDF.apply(lambda row: row.mp_per_g * row.expected3fgPerMin, axis=1)
+
+        # currentDayDF['expectedDK3fgPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'fg3_per_min'] )
+        #                                     * averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0]['fg3_diff_pct'] if (row.dkPosition, row.opp_id) in averageDKDF.index else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['fg3_diff_pct']
+        #                                     + (recentDF.at[row.name, 'fg3_diff_pct'] if row.name in recentDF.index else 0)
+        #                                     # + (overallOppDefDF.at[row.opp_id, '3fg_diff_pct'])
+        #                                     # + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['fg3_diff_pct'] if (row.name, row.homeAway) in homeAwayDF.index else 0)
+        #                                     + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['fg3_diff_pct'] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+        #                                     , axis=1)
+        # currentDayDF['expectedDK3fg'] = currentDayDF.apply(lambda row: row.mp_per_g * row.expectedDK3fgPerMin, axis=1)
+        # # currentDayDF['expectedftaPerMin'] = currentDayDF.apply(lambda row: self.playersDF[self.playersDF['name'] == row.name].iloc[0]['fta_per_min'] *
+        # #                                   averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['fta_diff_pct'] *
+        # #                                   recentDF[recentDF['name'] == row.name].iloc[0]['fta_diff_pct'], axis=1)
+        # # currentDayDF['expectedfta'] = currentDayDF.apply(lambda row: self.playersDF[self.playersDF['name'] == row.name].iloc[0]['mp_per_g'] * row.expectedftaPerMin, axis=1)
+
+        # # currentDayDF['expectedPts'] = currentDayDF.apply(lambda row: row.expected3fg*3 + row.expected2fg*2 + row.expectedfta * self.playersDF[self.playersDF['name'] == row.name].iloc[0]['ft_pct'], axis=1)
 
 
-        currentDayDF['expectedOrbPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'orb_per_min'] )
-                                            * averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['orb_diff_pct']
-                                            + (recentDF.at[row.name, 'orb_diff_pct'] if row.name in recentDF.index else 0)
-                                            # + (overallOppDefDF.at[row.opp_id, 'orb_diff_pct'])
-                                            # + homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['orb_diff_pct']
-                                            + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['orb_diff_pct'] if (row.name, row.opp_id) in matchupDF.index else 0)
-                                            , axis=1)
-        currentDayDF['expectedOrb'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'] * row.expectedOrbPerMin, axis=1)
-        # currentDayDF['expectedOrb'] = currentDayDF.apply(lambda row: row.mp * row.expectedOrbPerMin, axis=1)
-        currentDayDF['expectedDKOrbPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'orb_per_min'] )
-                                            * averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0]['orb_diff_pct'] if (row.dkPosition, row.opp_id) in averageDKDF.index else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['orb_diff_pct']
-                                            + (recentDF.at[row.name, 'orb_diff_pct'] if row.name in recentDF.index else 0)
-                                            # + (overallOppDefDF.at[row.opp_id, 'orb_diff_pct'])
-                                            # + homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['orb_diff_pct']
-                                            + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['orb_diff_pct'] if (row.name, row.opp_id) in matchupDF.index else 0)
-                                            , axis=1)
-        currentDayDF['expectedDKOrb'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'] * row.expectedDKOrbPerMin, axis=1)
-        # currentDayDF['expectedDKOrb'] = currentDayDF.apply(lambda row: row.mp * row.expectedDKOrbPerMin, axis=1)
-        currentDayDF['expectedDrbPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'drb_per_min'] )
-                                            * averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['drb_diff_pct']
-                                            + (recentDF.at[row.name, 'drb_diff_pct'] if row.name in recentDF.index else 0)
-                                            # + (overallOppDefDF.at[row.opp_id, 'drb_diff_pct'])
-                                            # + homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['drb_diff_pct']
-                                            + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['drb_diff_pct'] if (row.name, row.opp_id) in matchupDF.index else 0)
-                                            , axis=1)
-        currentDayDF['expectedDrb'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'] * row.expectedDrbPerMin, axis=1)
-        # currentDayDF['expectedDrb'] = currentDayDF.apply(lambda row: row.mp * row.expectedDrbPerMin, axis=1)
-        currentDayDF['expectedDKDrbPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'drb_per_min'] )
-                                            * averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0]['drb_diff_pct'] if (row.dkPosition, row.opp_id) in averageDKDF.index else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['drb_diff_pct']
-                                            + (recentDF.at[row.name, 'drb_diff_pct'] if row.name in recentDF.index else 0)
-                                            # + (overallOppDefDF.at[row.opp_id, 'drb_diff_pct'])
-                                            # + homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['drb_diff_pct']
-                                            + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['drb_diff_pct'] if (row.name, row.opp_id) in matchupDF.index else 0)
-                                            , axis=1)
-        currentDayDF['expectedDKDrb'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'] * row.expectedDKDrbPerMin, axis=1)
-        # currentDayDF['expectedDKDrb'] = currentDayDF.apply(lambda row: row.mp * row.expectedDKDrbPerMin, axis=1)
-        currentDayDF['expectedAstPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'ast_per_min'] )
-                                            * averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['ast_diff_pct']
-                                            + (recentDF.at[row.name, 'ast_diff_pct'] if row.name in recentDF.index else 0)
-                                            # + (overallOppDefDF.at[row.opp_id, 'ast_diff_pct'])
-                                            # + homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['ast_diff_pct']
-                                            + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['ast_diff_pct'] if (row.name, row.opp_id) in matchupDF.index else 0)
-                                            , axis=1)
-        currentDayDF['expectedDKAst'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'] * row.expectedAstPerMin, axis=1)
-        # currentDayDF['expectedDKAst'] = currentDayDF.apply(lambda row: row.mp * row.expectedAstPerMin, axis=1)
-        currentDayDF['expectedDKAstPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'ast_per_min'] )
-                                            * averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0]['ast_diff_pct'] if (row.dkPosition, row.opp_id) in averageDKDF.index else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['ast_diff_pct']
-                                            + (recentDF.at[row.name, 'ast_diff_pct'] if row.name in recentDF.index else 0)
-                                            # + (overallOppDefDF.at[row.opp_id, 'ast_diff_pct'])
-                                            # + homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['ast_diff_pct']
-                                            + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['ast_diff_pct'] if (row.name, row.opp_id) in matchupDF.index else 0)
-                                            , axis=1)
-        currentDayDF['expectedAst'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'] * row.expectedDKAstPerMin, axis=1)
-        # currentDayDF['expectedAst'] = currentDayDF.apply(lambda row: row.mp * row.expectedDKAstPerMin, axis=1)
-        currentDayDF['expectedStlPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'stl_per_min'] )
-                                            * averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['stl_diff_pct']
-                                            + (recentDF.at[row.name, 'stl_diff_pct'] if row.name in recentDF.index else 0)
-                                            # + (overallOppDefDF.at[row.opp_id, 'stl_diff_pct'])
-                                            # + homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['stl_diff_pct']
-                                            + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['stl_diff_pct'] if (row.name, row.opp_id) in matchupDF.index else 0)
-                                            , axis=1)
-        currentDayDF['expectedStl'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'] * row.expectedStlPerMin, axis=1)
-        # currentDayDF['expectedStl'] = currentDayDF.apply(lambda row: row.mp * row.expectedStlPerMin, axis=1)
-        currentDayDF['expectedDKStlPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'stl_per_min'] )
-                                            * averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0]['stl_diff_pct'] if (row.dkPosition, row.opp_id) in averageDKDF.index else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['stl_diff_pct']
-                                            + (recentDF.at[row.name, 'stl_diff_pct'] if row.name in recentDF.index else 0)
-                                            # + (overallOppDefDF.at[row.opp_id, 'stl_diff_pct'])
-                                            # + homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['stl_diff_pct']
-                                            + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['stl_diff_pct'] if (row.name, row.opp_id) in matchupDF.index else 0)
-                                            , axis=1)
-        currentDayDF['expectedDKStl'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'] * row.expectedDKStlPerMin, axis=1)
-        # currentDayDF['expectedDKStl'] = currentDayDF.apply(lambda row: row.mp * row.expectedDKStlPerMin, axis=1)
-        currentDayDF['expectedBlkPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'blk_per_min'] )
-                                            * averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['blk_diff_pct']
-                                            + (recentDF.at[row.name, 'blk_diff_pct'] if row.name in recentDF.index else 0)
-                                            # + (overallOppDefDF.at[row.opp_id, 'blk_diff_pct'])
-                                            # + homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['blk_diff_pct']
-                                            + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['blk_diff_pct'] if (row.name, row.opp_id) in matchupDF.index else 0)
-                                            , axis=1)
-        currentDayDF['expectedBlk'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'] * row.expectedBlkPerMin, axis=1)
-        # currentDayDF['expectedBlk'] = currentDayDF.apply(lambda row: row.mp * row.expectedBlkPerMin, axis=1)
-        currentDayDF['expectedDKBlkPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'blk_per_min'] )
-                                            * averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0]['blk_diff_pct'] if (row.dkPosition, row.opp_id) in averageDKDF.index else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['blk_diff_pct']
-                                            + (recentDF.at[row.name, 'blk_diff_pct'] if row.name in recentDF.index else 0)
-                                            # + (overallOppDefDF.at[row.opp_id, 'blk_diff_pct'])
-                                            # + homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['blk_diff_pct']
-                                            + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['blk_diff_pct'] if (row.name, row.opp_id) in matchupDF.index else 0)
-                                            , axis=1)
-        currentDayDF['expectedDKBlk'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'] * row.expectedDKBlkPerMin, axis=1)
-        # currentDayDF['expectedDKBlk'] = currentDayDF.apply(lambda row: row.mp * row.expectedDKBlkPerMin, axis=1)
-        currentDayDF['expectedTovPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'tov_per_min'] )
-                                            * averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['tov_diff_pct']
-                                            + (recentDF.at[row.name, 'tov_diff_pct'] if row.name in recentDF.index else 0)
-                                            # + (overallOppDefDF.at[row.opp_id, 'tov_diff_pct'])
-                                            # + homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['tov_diff_pct']
-                                            + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['tov_diff_pct'] if (row.name, row.opp_id) in matchupDF.index else 0)
-                                            , axis=1)
-        currentDayDF['expectedTov'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'] * row.expectedTovPerMin, axis=1)
-        # currentDayDF['expectedTov'] = currentDayDF.apply(lambda row: row.mp * row.expectedTovPerMin, axis=1)
-        currentDayDF['expectedDKTovPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'tov_per_min'] )
-                                            * averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0]['tov_diff_pct'] if (row.dkPosition, row.opp_id) in averageDKDF.index else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['tov_diff_pct']
-                                            + (recentDF.at[row.name, 'tov_diff_pct'] if row.name in recentDF.index else 0)
-                                            # + (overallOppDefDF.at[row.opp_id, 'tov_diff_pct'])
-                                            # + homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['tov_diff_pct']
-                                            + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['tov_diff_pct'] if (row.name, row.opp_id) in matchupDF.index else 0)
-                                            , axis=1)
-        currentDayDF['expectedDKTov'] = currentDayDF.apply(lambda row: self.playersDF.at[row.name, 'mp_per_g'] * row.expectedDKTovPerMin, axis=1)
-        # currentDayDF['expectedDKTov'] = currentDayDF.apply(lambda row: row.mp * row.expectedDKTovPerMin, axis=1)
+        # currentDayDF['expectedOrbPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'orb_per_min'] )
+        #                                     * averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['orb_diff_pct']
+        #                                     + (recentDF.at[row.name, 'orb_diff_pct'] if row.name in recentDF.index else 0)
+        #                                     # + (overallOppDefDF.at[row.opp_id, 'orb_diff_pct'])
+        #                                     # + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['orb_diff_pct'] if (row.name, row.homeAway) in homeAwayDF.index else 0)
+        #                                     + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['orb_diff_pct'] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+        #                                     , axis=1)
+        # currentDayDF['expectedOrb'] = currentDayDF.apply(lambda row: row.mp_per_g * row.expectedOrbPerMin, axis=1)
+
+        # currentDayDF['expectedDKOrbPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'orb_per_min'] )
+        #                                     * averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0]['orb_diff_pct'] if (row.dkPosition, row.opp_id) in averageDKDF.index else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['orb_diff_pct']
+        #                                     + (recentDF.at[row.name, 'orb_diff_pct'] if row.name in recentDF.index else 0)
+        #                                     # + (overallOppDefDF.at[row.opp_id, 'orb_diff_pct'])
+        #                                     # + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['orb_diff_pct'] if (row.name, row.homeAway) in homeAwayDF.index else 0)
+        #                                     + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['orb_diff_pct'] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+        #                                     , axis=1)
+        # currentDayDF['expectedDKOrb'] = currentDayDF.apply(lambda row: row.mp_per_g * row.expectedDKOrbPerMin, axis=1)
+
+        # currentDayDF['expectedDrbPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'drb_per_min'] )
+        #                                     * averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['drb_diff_pct']
+        #                                     + (recentDF.at[row.name, 'drb_diff_pct'] if row.name in recentDF.index else 0)
+        #                                     # + (overallOppDefDF.at[row.opp_id, 'drb_diff_pct'])
+        #                                     # + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['drb_diff_pct'] if (row.name, row.homeAway) in homeAwayDF.index else 0)
+        #                                     + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['drb_diff_pct'] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+        #                                     , axis=1)
+        # currentDayDF['expectedDrb'] = currentDayDF.apply(lambda row: row.mp_per_g * row.expectedDrbPerMin, axis=1)
+
+        # currentDayDF['expectedDKDrbPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'drb_per_min'] )
+        #                                     * averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0]['drb_diff_pct'] if (row.dkPosition, row.opp_id) in averageDKDF.index else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['drb_diff_pct']
+        #                                     + (recentDF.at[row.name, 'drb_diff_pct'] if row.name in recentDF.index else 0)
+        #                                     # + (overallOppDefDF.at[row.opp_id, 'drb_diff_pct'])
+        #                                     # + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['drb_diff_pct'] if (row.name, row.homeAway) in homeAwayDF.index else 0)
+        #                                     + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['drb_diff_pct'] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+        #                                     , axis=1)
+        # currentDayDF['expectedDKDrb'] = currentDayDF.apply(lambda row: row.mp_per_g * row.expectedDKDrbPerMin, axis=1)
+
+        # currentDayDF['expectedAstPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'ast_per_min'] )
+        #                                     * averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['ast_diff_pct']
+        #                                     + (recentDF.at[row.name, 'ast_diff_pct'] if row.name in recentDF.index else 0)
+        #                                     # + (overallOppDefDF.at[row.opp_id, 'ast_diff_pct'])
+        #                                     # + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['ast_diff_pct'] if (row.name, row.homeAway) in homeAwayDF.index else 0)
+        #                                     + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['ast_diff_pct'] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+        #                                     , axis=1)
+        # currentDayDF['expectedDKAst'] = currentDayDF.apply(lambda row: row.mp_per_g * row.expectedAstPerMin, axis=1)
+
+        # currentDayDF['expectedDKAstPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'ast_per_min'] )
+        #                                     * averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0]['ast_diff_pct'] if (row.dkPosition, row.opp_id) in averageDKDF.index else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['ast_diff_pct']
+        #                                     + (recentDF.at[row.name, 'ast_diff_pct'] if row.name in recentDF.index else 0)
+        #                                     # + (overallOppDefDF.at[row.opp_id, 'ast_diff_pct'])
+        #                                     # + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['ast_diff_pct'] if (row.name, row.homeAway) in homeAwayDF.index else 0)
+        #                                     + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['ast_diff_pct'] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+        #                                     , axis=1)
+        # currentDayDF['expectedAst'] = currentDayDF.apply(lambda row: row.mp_per_g * row.expectedDKAstPerMin, axis=1)
+
+        # currentDayDF['expectedStlPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'stl_per_min'] )
+        #                                     * averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['stl_diff_pct']
+        #                                     + (recentDF.at[row.name, 'stl_diff_pct'] if row.name in recentDF.index else 0)
+        #                                     # + (overallOppDefDF.at[row.opp_id, 'stl_diff_pct'])
+        #                                     # + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['stl_diff_pct'] if (row.name, row.homeAway) in homeAwayDF.index else 0)
+        #                                     + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['stl_diff_pct'] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+        #                                     , axis=1)
+        # currentDayDF['expectedStl'] = currentDayDF.apply(lambda row: row.mp_per_g * row.expectedStlPerMin, axis=1)
+
+        # currentDayDF['expectedDKStlPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'stl_per_min'] )
+        #                                     * averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0]['stl_diff_pct'] if (row.dkPosition, row.opp_id) in averageDKDF.index else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['stl_diff_pct']
+        #                                     + (recentDF.at[row.name, 'stl_diff_pct'] if row.name in recentDF.index else 0)
+        #                                     # + (overallOppDefDF.at[row.opp_id, 'stl_diff_pct'])
+        #                                     # + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['stl_diff_pct'] if (row.name, row.homeAway) in homeAwayDF.index else 0)
+        #                                     + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['stl_diff_pct'] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+        #                                     , axis=1)
+        # currentDayDF['expectedDKStl'] = currentDayDF.apply(lambda row: row.mp_per_g * row.expectedDKStlPerMin, axis=1)
+
+        # currentDayDF['expectedBlkPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'blk_per_min'] )
+        #                                     * averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['blk_diff_pct']
+        #                                     + (recentDF.at[row.name, 'blk_diff_pct'] if row.name in recentDF.index else 0)
+        #                                     # + (overallOppDefDF.at[row.opp_id, 'blk_diff_pct'])
+        #                                     # + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['blk_diff_pct'] if (row.name, row.homeAway) in homeAwayDF.index else 0)
+        #                                     + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['blk_diff_pct'] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+        #                                     , axis=1)
+        # currentDayDF['expectedBlk'] = currentDayDF.apply(lambda row: row.mp_per_g * row.expectedBlkPerMin, axis=1)
+
+        # currentDayDF['expectedDKBlkPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'blk_per_min'] )
+        #                                     * averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0]['blk_diff_pct'] if (row.dkPosition, row.opp_id) in averageDKDF.index else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['blk_diff_pct']
+        #                                     + (recentDF.at[row.name, 'blk_diff_pct'] if row.name in recentDF.index else 0)
+        #                                     # + (overallOppDefDF.at[row.opp_id, 'blk_diff_pct'])
+        #                                     # + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['blk_diff_pct'] if (row.name, row.homeAway) in homeAwayDF.index else 0)
+        #                                     + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['blk_diff_pct'] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+        #                                     , axis=1)
+        # currentDayDF['expectedDKBlk'] = currentDayDF.apply(lambda row: row.mp_per_g * row.expectedDKBlkPerMin, axis=1)
+
+        # currentDayDF['expectedTovPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'tov_per_min'] )
+        #                                     * averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['tov_diff_pct']
+        #                                     + (recentDF.at[row.name, 'tov_diff_pct'] if row.name in recentDF.index else 0)
+        #                                     # + (overallOppDefDF.at[row.opp_id, 'tov_diff_pct'])
+        #                                     # + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['tov_diff_pct'] if (row.name, row.homeAway) in homeAwayDF.index else 0)
+        #                                     + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['tov_diff_pct'] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+        #                                     , axis=1)
+        # currentDayDF['expectedTov'] = currentDayDF.apply(lambda row: row.mp_per_g * row.expectedTovPerMin, axis=1)
+
+        # currentDayDF['expectedDKTovPerMin'] = currentDayDF.apply(lambda row: (self.playersDF.at[row.name, 'tov_per_min'] )
+        #                                     * averageDKDF[averageDKDF['dkPosition'] == row.dkPosition][averageDKDF['opp_id'] == row.opp_id].iloc[0]['tov_diff_pct'] if (row.dkPosition, row.opp_id) in averageDKDF.index else averageDF[averageDF['fdPosition'] == row.fdPosition][averageDF['opp_id'] == row.opp_id].iloc[0]['tov_diff_pct']
+        #                                     + (recentDF.at[row.name, 'tov_diff_pct'] if row.name in recentDF.index else 0)
+        #                                     # + (overallOppDefDF.at[row.opp_id, 'tov_diff_pct'])
+        #                                     # + (homeAwayDF[homeAwayDF['name'] == row.name][homeAwayDF['homeAway'] == row.homeAway].iloc[0]['tov_diff_pct'] if (row.name, row.homeAway) in homeAwayDF.index else 0)
+        #                                     + (matchupDF[matchupDF['name'] == row.name][matchupDF['opp_id'] == row.opp_id].iloc[0]['tov_diff_pct'] if ((matchupDF['name'] == row.name) & (matchupDF['opp_id'] == row.opp_id)).any() else 0)
+        #                                     , axis=1)
+        # currentDayDF['expectedDKTov'] = currentDayDF.apply(lambda row: row.mp_per_g * row.expectedDKTovPerMin, axis=1)
+
 
         currentDayDF['restMultiplier'] = currentDayDF.apply(lambda row: NBADataAnalyzer.CalculateRestMultipliers(row.played1back, row.played2back, row.played3back), axis=1)
 
         # expectedPointsDF = currentDayDF[['name', 'fdPosition', 'salary', 'opp_id', 'expectedPts', 'expectedOrb', 'expectedDrb', 'expectedAst', 'expectedStl', 'expectedBlk','expectedTov', 'actualFDPoints', 'played1back', 'played2back', 'played3back']]
 
-        currentDayDF['FDPointsPerMin'] = currentDayDF.apply(lambda row: (float(row.expectedDKPtsPerMin) +
-                                                                  1.2 * float(row.expectedDKDrbPerMin + row.expectedDKOrbPerMin) +
-                                                                  1.5 * float(row.expectedDKAstPerMin) +
-                                                                  3 * float(row.expectedDKBlkPerMin) +
-                                                                  3 * float(row.expectedDKStlPerMin) -
-                                                                  float(row.expectedDKTovPerMin))
+        currentDayDF['FDPointsPerMin'] = currentDayDF.apply(lambda row: (float(row.expectedDKptsPerMin) +
+                                                                  1.2 * float(row.expectedDKdrbPerMin + row.expectedDKorbPerMin) +
+                                                                  1.5 * float(row.expectedDKastPerMin) +
+                                                                  3 * float(row.expectedDKblkPerMin) +
+                                                                  3 * float(row.expectedDKstlPerMin) -
+                                                                  float(row.expectedDKtovPerMin))
                                                                   # * row.restMultiplier
                                                                   , axis=1)
 
-        currentDayDF['DKPointsPerMin'] = currentDayDF.apply(lambda row: (float(row.expectedDKPtsPerMin) +
-                                                                  1.25 * float(row.expectedDKDrbPerMin + row.expectedDKOrbPerMin) +
-                                                                  1.5 * float(row.expectedDKAstPerMin) +
-                                                                  2 * float(row.expectedDKBlkPerMin) +
-                                                                  2 * float(row.expectedDKStlPerMin) +
-                                                                  0.5 * float(row.expectedDK3fgPerMin) -
-                                                                  0.5 * float(row.expectedDKTovPerMin))
+        currentDayDF['DKPointsPerMin'] = currentDayDF.apply(lambda row: (float(row.expectedDKptsPerMin) +
+                                                                  1.25 * float(row.expectedDKdrbPerMin + row.expectedDKorbPerMin) +
+                                                                  1.5 * float(row.expectedDKastPerMin) +
+                                                                  2 * float(row.expectedDKblkPerMin) +
+                                                                  2 * float(row.expectedDKstlPerMin) +
+                                                                  0.5 * float(row.expectedDKfg3PerMin) -
+                                                                  0.5 * float(row.expectedDKtovPerMin))
                                                                   # * row.restMultiplier
                                                                   , axis=1)
 
-        currentDayDF['FDPoints'] = currentDayDF.apply(lambda row: (float(row.expectedPts) +
-                                                                  1.2 * float(row.expectedDrb + row.expectedOrb) +
-                                                                  1.5 * float(row.expectedAst) +
-                                                                  3 * float(row.expectedBlk) +
-                                                                  3 * float(row.expectedStl) -
-                                                                  float(row.expectedTov))
+        currentDayDF['FDPoints'] = currentDayDF.apply(lambda row: (float(row.expectedpts) +
+                                                                  1.2 * float(row.expecteddrb + row.expectedorb) +
+                                                                  1.5 * float(row.expectedast) +
+                                                                  3 * float(row.expectedblk) +
+                                                                  3 * float(row.expectedstl) -
+                                                                  float(row.expectedtov))
                                                                   # * row.restMultiplier
                                                                   * (usageDiff[row.name] if row.name in usageDiff else 1)
                                                                   , axis=1)
 
-        currentDayDF['DKPoints'] = currentDayDF.apply(lambda row: (float(row.expectedDKPtsPerMin) +
-                                                                  1.25 * float(row.expectedDKDrbPerMin + row.expectedDKOrbPerMin) +
-                                                                  1.5 * float(row.expectedDKAstPerMin) +
-                                                                  2 * float(row.expectedDKBlkPerMin) +
-                                                                  2 * float(row.expectedDKStlPerMin) +
-                                                                  0.5 * float(row.expectedDK3fgPerMin) -
-                                                                  0.5 * float(row.expectedDKTovPerMin))
+        currentDayDF['DKPoints'] = currentDayDF.apply(lambda row: (float(row.expectedDKptsPerMin) +
+                                                                  1.25 * float(row.expectedDKdrbPerMin + row.expectedDKorbPerMin) +
+                                                                  1.5 * float(row.expectedDKastPerMin) +
+                                                                  2 * float(row.expectedDKblkPerMin) +
+                                                                  2 * float(row.expectedDKstlPerMin) +
+                                                                  0.5 * float(row.expectedDKfg3PerMin) -
+                                                                  0.5 * float(row.expectedDKtovPerMin))
                                                                   # * row.restMultiplier
                                                                   * (usageDiff[row.name] if row.name in usageDiff else 1)
                                                                   , axis=1)
@@ -885,15 +905,15 @@ class NBADataAnalyzer:
         optimizer.load_players(playersList)
 
         dkLineups = optimizer.optimize(n=1)
-        expectedPointsDF = currentDayDF[['name', 'fdPosition', 'dkPosition', 'salary', 'dkSalary', 'opp_id', 'expectedDKPtsPerMin', 'expectedDK3fgPerMin', 'expectedDKOrbPerMin', 'expectedDKDrbPerMin', 'expectedDKAstPerMin', 'expectedDKStlPerMin', 'expectedDKBlkPerMin','expectedDKTovPerMin', 'actualFDPoints', 'actualDKPoints', 'mp_per_g', 'restMultiplier', 'FDPointsPerMin', 'DKPointsPerMin']]
+        expectedPointsDF = currentDayDF[['fdPosition', 'dkPosition', 'salary', 'dkSalary', 'opp_id', 'expectedDKptsPerMin', 'expectedDKfg3PerMin', 'expectedDKorbPerMin', 'expectedDKdrbPerMin', 'expectedDKastPerMin', 'expectedDKstlPerMin', 'expectedDKblkPerMin','expectedDKtovPerMin', 'actualFDPoints', 'actualDKPoints', 'mp_per_g', 'restMultiplier', 'FDPointsPerMin', 'DKPointsPerMin']]
 
         return lineups, dkLineups, expectedPointsDF
 
     def CalculateRestMultipliers(oneDay, twoDay, threeDay):
         if oneDay and threeDay:
-            return 0.7
+            return 0.8
         elif oneDay:
-            return 0.85
+            return 0.97
         # elif twoDay and threeDay:
         #     return 0.95
         # elif not oneDay and not twoDay:

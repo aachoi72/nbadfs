@@ -7,10 +7,10 @@ from pymongo import MongoClient
 
 client = MongoClient()
 db = client.test
-dateFrom = datetime(2020, 1, 18)
-dateTo = datetime(2020, 1, 20)
+dateFrom = datetime(2020, 2, 7)
+dateTo = datetime(2020, 2, 9)
 
-url = "https://www.basketball-reference.com/leagues/NBA_2020_games-january.html"
+url = "https://www.basketball-reference.com/leagues/NBA_2020_games-february.html"
 
 response = requests.get(url)
 html = response.content

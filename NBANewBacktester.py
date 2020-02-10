@@ -32,9 +32,9 @@ injuredPlayerList = []
 optimisticOver300 = 0
 averageOver300 = 0
 pessimisticOver300 = 0
-optimisticDKOver280 = 0
-averageDKOver280 = 0
-pessimisticDKOver280 = 0
+optimisticDKOver300 = 0
+averageDKOver300 = 0
+pessimisticDKOver300 = 0
 
 def BacktestDate(df, currentDate):
     gamesDF['pts_per_g'] = gamesDF.apply(lambda row: float(row.pts), axis=1)
@@ -82,17 +82,17 @@ def BacktestDate(df, currentDate):
         global highestDKPoint
         global highestDKDate
         global dkCategory
-        global optimisticDKOver280
-        global averageDKOver280
-        global pessimisticDKOver280
+        global optimisticDKOver300
+        global averageDKOver300
+        global pessimisticDKOver300
 
         optimisticOver300 = optimisticOver300 + 1 if optimisticOptimalLineup.actual_fantasy_points  > 300 else optimisticOver300
         averageOver300 = averageOver300 + 1 if optimalLineup.actual_fantasy_points  > 300 else averageOver300
         pessimisticOver300 = pessimisticOver300 + 1 if optimalPesimisticLineup.actual_fantasy_points  > 300 else pessimisticOver300
 
-        optimisticDKOver280 = optimisticDKOver280 + 1 if optimisticOptimalLineup.actual_fantasy_points  > 280 else optimisticDKOver280
-        averageDKOver280 = averageDKOver280 + 1 if optimalLineup.actual_fantasy_points  > 280 else averageDKOver280
-        pessimisticDKOver280 = pessimisticDKOver280 + 1 if optimalPesimisticLineup.actual_fantasy_points  > 280 else pessimisticDKOver280
+        optimisticDKOver300 = optimisticDKOver300 + 1 if optimisticOptimalDKLineup.actual_fantasy_points  > 300 else optimisticDKOver300
+        averageDKOver300 = averageDKOver300 + 1 if optimalDKLineup.actual_fantasy_points  > 300 else averageDKOver300
+        pessimisticDKOver300 = pessimisticDKOver300 + 1 if optimalPesimisticDKLineup.actual_fantasy_points  > 300 else pessimisticDKOver300
 
         counter = counter + 1
         if optimalLineup.actual_fantasy_points > highestPoint:
@@ -125,26 +125,36 @@ def BacktestDate(df, currentDate):
             highestDKDate = currentDate
             dkCategory = 'pesimistic'
 
-        print('Done for: {0}\n\nAverageTotal: {1}\nOptimisticTotal: {2}\nPesimisticTotal: {3}\n'.format(currentDate, optimalLineup.actual_fantasy_points, optimisticOptimalLineup.actual_fantasy_points, optimalPesimisticLineup.actual_fantasy_points))
-        print('Running Average of AverageTotal: {0}'.format(sum(totalPoints) / counter))
-        print('Running Average of OptimisticTotal: {0}'.format(sum(optimisticPoints) / counter))
-        print('Running Average of PesimisticTotal: {0}'.format(sum(pesimisticPoints) / counter))
-        print('Number of Optimistic Points Above 300: {0}'.format(optimisticOver300))
-        print('Number of Average Points Above 300: {0}'.format(averageOver300))
-        print('Number of Pessimistic Points Above 300: {0}'.format(pessimisticOver300))
-        print('Highest Score: {0}. Date: {1}. Category: {2}\n'.format(highestPoint, highestDate, category))
+        print('Done for FD: {0}\n\nOptimisticTotal: {2}\nAverageTotal: {1}\nPesimisticTotal: {3}\n'.format(currentDate, optimalLineup.actual_fantasy_points, optimisticOptimalLineup.actual_fantasy_points, optimalPesimisticLineup.actual_fantasy_points))
+        print('Done for DK: {0}\n\nOptimisticTotal: {2}\nAverageTotal: {1}\nPesimisticTotal: {3}\n'.format(currentDate, optimalDKLineup.actual_fantasy_points, optimisticOptimalDKLineup.actual_fantasy_points, optimalPesimisticDKLineup.actual_fantasy_points))
+
+        print('Running Average of FD OptimisticTotal: {0}'.format(sum(optimisticPoints) / counter))
+        print('Running Average of FD AverageTotal: {0}'.format(sum(totalPoints) / counter))
+        print('Running Average of FD PesimisticTotal: {0}'.format(sum(pesimisticPoints) / counter))
+        print('Number of FD Optimistic Points Above 300: {0}'.format(optimisticOver300))
+        print('Number of FD Average Points Above 300: {0}'.format(averageOver300))
+        print('Number of FD Pessimistic Points Above 300: {0}'.format(pessimisticOver300))
+        print('Highest FD Score: {0}. Date: {1}. Category: {2}\n'.format(highestPoint, highestDate, category))
+
+        print('Running Average of DK OptimisticTotal: {0}'.format(sum(optimisticDKPoints) / counter))
+        print('Running Average of DK AverageTotal: {0}'.format(sum(totalDKPoints) / counter))
+        print('Running Average of DK PesimisticTotal: {0}'.format(sum(pesimisticDKPoints) / counter))
+        print('Number of DK Optimistic Points Above 300: {0}'.format(optimisticDKOver300))
+        print('Number of DK Average Points Above 300: {0}'.format(averageDKOver300))
+        print('Number of DK Pessimistic Points Above 300: {0}'.format(pessimisticDKOver300))
+        print('Highest DK Score: {0}. Date: {1}. Category: {2}\n'.format(highestDKPoint, highestDKDate, dkCategory))
     except Exception as err:
         print('Error with Date: ', currentDate, err)
         traceback.print_exc(file=sys.stdout)
 
-for year in [2019, 2020]:
+for year in [2018, 2019]:
     for month in range(1, 13):
-        if year == 2019 and month < 11:
+        if year == 2018 and month < 13:
             continue
-        if year == 2020 and month > 4:
+        if year == 2019 and month > 1:
             continue
         for date in range(1, 32):
-            if month == 4 and date > 10:
+            if month == 1 and date > 21:
                 continue
             if date > MONTH_TO_DATE[month]:
                 continue

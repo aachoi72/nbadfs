@@ -75,7 +75,9 @@ fanduelNameTranslation = {
 	'Lou Williams' : 'Louis Williams',
 	'Wendell Carter' : 'Wendell Carter Jr.',
 	'Tim Hardaway' : 'Tim Hardaway Jr.',
-	'Glenn Robinson' : 'Glenn Robinson III'
+	'Glenn Robinson' : 'Glenn Robinson III',
+	'Dennis Smith' : 'Dennis Smith Jr.',
+	'Jacob Evans' : 'Jacob Evans III'
 }
 
 fanduelTeamTranslation = {
